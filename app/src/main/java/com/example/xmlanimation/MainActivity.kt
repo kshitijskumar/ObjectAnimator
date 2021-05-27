@@ -1,14 +1,9 @@
 package com.example.xmlanimation
 
+import android.animation.AnimatorInflater
 import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.View
-import android.view.animation.Animation
-import android.view.animation.AnimationSet
-import android.view.animation.AnimationUtils
-import android.widget.Toast
 import com.example.xmlanimation.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -16,41 +11,60 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding : ActivityMainBinding
     private var isBackShown = false
 
+    private val frontRotator by lazy {
+        AnimatorInflater.loadAnimator(this, R.animator.anim_flip_card_front)
+    }
+
+    private val backRotator by lazy {
+        AnimatorInflater.loadAnimator(this, R.animator.anim_flip_card_back)
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setupCameraDistanceForViews()
+
         binding.tvHello.setOnClickListener {
-            rotateHelloToShowWorld(it)
+            flipCard()
         }
-
-
         binding.tvWorld.setOnClickListener {
-            Toast.makeText(this, "World clicked", Toast.LENGTH_SHORT).show()
+            flipCard()
         }
-
-
     }
 
-    private fun rotateHelloToShowWorld(view: View) {
-        val rotate = if(!isBackShown){
-            ObjectAnimator.ofFloat(view, "rotation", 0f, -75f).apply {
-                duration = 1000L
+    private fun flipCard() {
+
+        if(!isBackShown) {
+
+            frontRotator.setTarget(binding.tvHello)
+            backRotator.setTarget(binding.tvWorld)
+            AnimatorSet().apply {
+                playTogether(frontRotator, backRotator)
+                start()
             }
-        }else{
-            ObjectAnimator.ofFloat(view, "rotation", -75f, 0f).apply {
-                duration = 1000L
+
+        }else {
+
+            frontRotator.setTarget(binding.tvWorld)
+            backRotator.setTarget(binding.tvHello)
+            AnimatorSet().apply {
+                playTogether(frontRotator, backRotator)
+                start()
             }
+
         }
-        val pivotX = ObjectAnimator.ofFloat(view, "pivotX", 0f)
-        val pivotY = ObjectAnimator.ofFloat(view, "pivotY", view.height.toFloat())
 
         isBackShown = !isBackShown
-
-        AnimatorSet().apply {
-            playTogether(rotate, pivotX, pivotY)
-            start()
-        }
     }
+
+    private fun setupCameraDistanceForViews() {
+        val scale = this.resources.displayMetrics.density
+        val distance = 5000
+        binding.tvHello.cameraDistance = scale * distance
+        binding.tvWorld.cameraDistance = scale * distance
+    }
+
 }
